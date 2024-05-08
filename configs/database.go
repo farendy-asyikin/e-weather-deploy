@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"log"
-	"main.go/models"
 	"os"
 	"strconv"
 	"time"
@@ -19,12 +18,11 @@ func SetupDatabaseConnection() *gorm.DB {
 		panic("Failed to load env file")
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASS")
-	dbHost := os.Getenv("DB_HOST")
-	dbName := os.Getenv("DB_NAME")
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		panic("DATABASE_URL is not set")
+	}
 
-	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=5432 sslmode=disable TimeZone=Asia/Jakarta"
 	logLevelStr := os.Getenv("LOG_LEVEL")
 	if logLevelStr == "" {
 		logLevelStr = strconv.Itoa(int(logger.Info))
@@ -52,21 +50,11 @@ func SetupDatabaseConnection() *gorm.DB {
 		},
 	}
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  dsn,
+		DSN:                  dbURL,
 		PreferSimpleProtocol: true,
 	}), gormConfig)
 	if err != nil {
 		panic("Failed to create a connection to database")
-	}
-
-	err = db.AutoMigrate(
-		&models.User{},
-		&models.Device{},
-		&models.Sensor{},
-		&models.SensorValue{},
-	)
-	if err != nil {
-		panic("Failed to migrate database")
 	}
 
 	return db
